@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mobile Login App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial; text-align: center; padding: 20px; }
+    input { margin: 10px; padding: 8px; width: 80%; }
+    button { padding: 10px 20px; }
+  </style>
+</head>
+<body>
+  <!-- Login Form -->
+  <h2>Login</h2>
+  <form id="loginForm">
+    <input type="text" id="username" placeholder="Username" required><br>
+    <input type="password" id="password" placeholder="Password" required><br>
+    <button type="submit">Login</button>
+    <p id="error" style="color:red;"></p>
+  </form>
+
+  <!-- Welcome Page -->
+  <div id="welcome" style="display:none;">
+    <h1>Welcome!</h1>
+    <p>You’ve successfully logged in.</p>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // Hardcoded valid credentials for demo
+    const validUser = "testuser";
+    const validPass = "password123";
+
+    document.getElementById("loginForm").onsubmit = function(e) {
+      e.preventDefault();
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+      const error = document.getElementById("error");
+
+      if (user === validUser && pass === validPass) {
+        document.getElementById("loginForm").style.display = "none";
+        document.getElementById("welcome").style.display = "block";
+      } else {
+        error.textContent = "Invalid username or password.";
+      }
+    };
+  </script>
+
+  <!-- WebdriverIO Mobile Automation Script -->
+  <script>
+    // Note: This script runs in a Node.js environment with WebdriverIO/Appium.
+    // Save this section as a separate .js file in practice.
+    const { remote } = require('webdriverio');
+
+    (async () => {
+      const browser = await remote({
+        capabilities: {
+          platformName: 'Android',
+          deviceName: 'emulator-5554', // Replace with your device
+          browserName: 'Chrome',
+          chromeOptions: { mobileEmulation: { deviceName: 'Pixel 2' } } // Simulate mobile view
+        },
+        hostname: 'localhost',
+        port: 4723 // Appium server port
+      });
+
+      try {
+        // Positive Scenario: Successful Login
+        await browser.url('http://your-web-app-url'); // Replace with your app URL
+        await browser.setValue('#username', 'testuser');
+        await browser.setValue('#password', 'password123');
+        await browser.click('button[type="submit"]');
+        await browser.waitUntil(async () => 
+          await browser.isExisting('#welcome'), { timeout: 5000 }
+        );
+        console.log("✅ Positive Test Passed: Redirected to welcome page.");
+
+        // Negative Scenario: Failed Login
+        await browser.url('http://your-web-app-url');
+        await browser.setValue('#username', 'testuser');
+        await browser.setValue('#password', 'wrongpassword');
+        await browser.click('button[type="submit"]');
+        await browser.waitUntil(async () => 
+          await browser.isExisting('#error'), { timeout: 5000 }
+        );
+        const errorMessage = await browser.getText('#error');
+        if (errorMessage.includes("Invalid")) {
+          console.log("✅ Negative Test Passed: Error message shown.");
+        }
+      } catch (err) {
+        console.error("❌ Test Failed:", err);
+      } finally {
+        await browser.deleteSession();
+      }
+    })();
+  </script>
+</body>
+</html>
